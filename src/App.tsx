@@ -36,7 +36,7 @@ function App() {
   return (
     <CartProvider>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={(import.meta as any).env.BASE_URL.replace(/\/$/, "")}>
           <div className="min-h-screen flex relative selection:bg-primary selection:text-primary-foreground">
             <Sidebar />
             <div className="flex-1 flex flex-col min-w-0 lg:pl-20">

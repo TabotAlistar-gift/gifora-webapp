@@ -6,8 +6,7 @@ import {
   Sparkles, 
   ShoppingBag, 
   User,
-  CreditCard,
-  ChevronRight
+  CreditCard
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +17,7 @@ export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [location] = useLocation();
   const { cart } = useCartWrapper();
-  const cartItemCount = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const cartItemCount = cart?.items?.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0) || 0;
 
   const navItems = [
     { name: "Home", href: "/", icon: Home },
