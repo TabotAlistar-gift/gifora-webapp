@@ -1,0 +1,20 @@
+packages:
+  "framer-motion": "For premium, luxury page transitions and scroll animations"
+  "react-hook-form": "For robust checkout and admin forms"
+  "@hookform/resolvers": "For Zod validation integration"
+  "zod": "For schema validation on the frontend"
+  "lucide-react": "For crisp, modern icons"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to merge tailwind classes"
+
+images:
+  - path: "artifacts/gifora/public/images/hero-luxury.png"
+    description: "Abstract, dark, moody luxury background. Deep black with subtle swirling golden dust or silk threads, cinematic lighting, ultra high resolution."
+    aspect_ratio: "16:9"
+  - path: "artifacts/gifora/public/images/brand-texture.png"
+    description: "Close up macro shot of black woven fabric with single gold thread. Dark, rich, premium texture, elegant shadows."
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - sessionId is generated and stored in localStorage for guest cart functionality
