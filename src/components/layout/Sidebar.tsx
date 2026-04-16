@@ -10,13 +10,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
+import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
 
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [location] = useLocation();
   const { cart } = useCartWrapper();
+  const { user } = useAuth();
   const cartItemCount = cart?.items?.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0) || 0;
 
   const navItems = [
@@ -26,7 +28,7 @@ export default function Sidebar() {
     { name: "Beaded Bags", href: "/collection?category=beaded-bag", icon: Sparkles },
     { name: "Payments", href: "/payment", icon: CreditCard },
     { name: "Shopping Bag", href: "/cart", icon: ShoppingBag, badge: cartItemCount },
-    { name: "Admin Portal", href: "/admin", icon: User },
+    { name: "Account", href: user ? "/profile" : "/auth", icon: User },
   ];
 
   return (
@@ -129,8 +131,13 @@ export default function Sidebar() {
                 exit={{ opacity: 0 }}
                 className="overflow-hidden"
               >
-                <p className="text-[10px] tracking-widest uppercase text-muted-foreground leading-none mb-1">Status</p>
-                <p className="text-xs font-medium tracking-wider text-foreground">Guest Access</p>
+                 <p className="text-[10px] tracking-widest uppercase text-muted-foreground leading-none mb-1">Status</p>
+                 <p className="text-xs font-medium tracking-wider text-foreground">
+                   {user ? user.name : "Guest Access"}
+                 </p>
+                 {user && (
+                   <Link href="/profile" className="text-[9px] tracking-widest text-primary uppercase hover:underline mt-1 block">View Profile</Link>
+                 )}
               </motion.div>
             )}
            </AnimatePresence>

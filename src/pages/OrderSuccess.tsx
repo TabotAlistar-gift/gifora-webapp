@@ -5,18 +5,21 @@ import { formatPrice } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { useCartWrapper } from "@/hooks/use-cart-wrapper";
+
 export default function OrderSuccess() {
   const { id } = useParams<{ id: string }>();
-  const isLoading = false;
-  const order = {
-    id: id || "999",
-    customerEmail: "customer@example.com",
+  const { lastOrder } = useCartWrapper();
+  
+  const order = lastOrder || {
+    id: id || "999999",
+    customerEmail: "patron@gifora.luxury",
     status: "confirmed",
     total: 0,
     items: []
   };
 
-  if (!order) return <div className="min-h-screen pt-32 text-center">Order not found</div>;
+  if (!order && !id) return <div className="min-h-screen pt-32 text-center">Order not found</div>;
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-4 flex flex-col items-center">
@@ -48,8 +51,8 @@ export default function OrderSuccess() {
         <div className="space-y-4 mb-8">
           {Array.isArray(order?.items) && order.items.map(item => (
             <div key={item.id} className="flex justify-between text-sm font-light">
-              <span>{item.quantity}x {item.productName}</span>
-              <span className="tracking-widest">{formatPrice(item.price * item.quantity)}</span>
+              <span>{item.quantity}x {item.product.name}</span>
+              <span className="tracking-widest">{formatPrice(item.product.price * item.quantity)}</span>
             </div>
           ))}
         </div>

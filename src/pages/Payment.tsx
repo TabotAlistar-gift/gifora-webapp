@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useLocation, Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "wouter";
+import { motion } from "framer-motion";
 import { 
   CreditCard, 
   Smartphone, 
   Building2, 
   ShieldCheck, 
-  ChevronRight, 
   CheckCircle2,
   Lock,
   ArrowLeft
@@ -17,17 +16,17 @@ import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Payment() {
-  const { cart, clearCart } = useCartWrapper();
+  const { cart, clearCart, checkoutData, setLastOrder } = useCartWrapper();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedMethod, setSelectedMethod] = useState<"card" | "wallet" | "transfer">("card");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Form State for Card Demo
+  // Form State for Card Demo - initialized with Patron name from checkout
   const [cardData, setCardData] = useState({
     number: "",
-    name: "",
+    name: checkoutData?.customerName || "",
     expiry: "",
     cvc: ""
   });
@@ -36,6 +35,17 @@ export default function Payment() {
     setIsProcessing(true);
     // Simulate a luxury processing time
     setTimeout(() => {
+      const orderId = (Math.floor(Math.random() * 900000) + 100000).toString();
+      
+      // Save order summary for the success page
+      setLastOrder({
+        id: orderId,
+        items: [...cart.items],
+        total: cart.total,
+        customerEmail: checkoutData?.customerEmail || "user@gifora.luxury",
+        status: "confirmed"
+      });
+
       setIsProcessing(false);
       setIsSuccess(true);
       toast({
@@ -45,6 +55,7 @@ export default function Payment() {
       });
       // Clear the cart on success
       clearCart();
+      setTimeout(() => setLocation(`/success/${orderId}`), 2000);
     }, 2500);
   };
 
@@ -114,7 +125,7 @@ export default function Payment() {
                   <div className="space-y-1">
                     <span className="text-[8px] uppercase tracking-[0.3em] text-muted-foreground block font-bold">Holder</span>
                     <span className="text-sm tracking-[0.2em] uppercase font-light truncate max-w-[150px] inline-block">
-                      {cardData.name || "Guest Patron"}
+                      {cardData.name || "Guest User"}
                     </span>
                   </div>
                   <div className="space-y-1 text-right">
@@ -135,7 +146,7 @@ export default function Payment() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { id: "card", label: "Luxury Card", icon: CreditCard },
-              { id: "wallet", label: "MR GIFORA App", icon: Smartphone },
+              { id: "wallet", label: "GIFORA App", icon: Smartphone },
               { id: "transfer", label: "Boutique Bank", icon: Building2 },
             ].map((method) => (
               <button
@@ -177,35 +188,35 @@ export default function Payment() {
                     />
                  </div>
                  <div className="grid grid-cols-2 gap-4">
-                   <div>
-                      <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Patron Name</label>
-                      <input 
-                         onChange={(e) => setCardData(prev => ({ ...prev, name: e.target.value }))}
-                         placeholder="Your Name"
-                         className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light uppercase"
-                      />
-                   </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Exp.</label>
-                        <input 
-                           maxLength={5}
-                           onChange={(e) => setCardData(prev => ({ ...prev, expiry: e.target.value }))}
-                           placeholder="MM/YY"
-                           className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">CVC</label>
-                        <input 
-                           maxLength={3}
-                           type="password"
-                           onChange={(e) => setCardData(prev => ({ ...prev, cvc: e.target.value }))}
-                           placeholder="***"
-                           className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
-                        />
-                      </div>
-                   </div>
+                    <div>
+                       <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Full Name</label>
+                       <input 
+                          onChange={(e) => setCardData(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Your Name"
+                          className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light uppercase"
+                       />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div>
+                         <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Exp.</label>
+                         <input 
+                            maxLength={5}
+                            onChange={(e) => setCardData(prev => ({ ...prev, expiry: e.target.value }))}
+                            placeholder="MM/YY"
+                            className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">CVC</label>
+                         <input 
+                            maxLength={3}
+                            type="password"
+                            onChange={(e) => setCardData(prev => ({ ...prev, cvc: e.target.value }))}
+                            placeholder="***"
+                            className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
+                         />
+                       </div>
+                    </div>
                  </div>
               </div>
             </form>

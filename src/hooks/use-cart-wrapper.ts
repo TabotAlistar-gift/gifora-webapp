@@ -23,6 +23,10 @@ export function useCartWrapper() {
     clearCart: () => {
       cartContext.clearCart();
     },
+    checkoutData: cartContext.checkoutData,
+    setCheckoutData: cartContext.setCheckoutData,
+    lastOrder: cartContext.lastOrder,
+    setLastOrder: cartContext.setLastOrder,
     isAdding: false,
   };
 }

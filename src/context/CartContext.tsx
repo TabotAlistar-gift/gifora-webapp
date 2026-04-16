@@ -13,12 +13,30 @@ export interface Cart {
   total: number;
 }
 
+export interface OrderSummary {
+  id: string;
+  items: CartItem[];
+  total: number;
+  customerEmail: string;
+  status: string;
+}
+
+export interface CheckoutData {
+  customerName: string;
+  customerEmail: string;
+  shippingAddress: string;
+}
+
 interface CartContextType {
   cart: Cart;
   addToCart: (product: Product, quantity?: number) => void;
   updateItemQuantity: (itemId: number, quantity: number) => void;
   removeItem: (itemId: number) => void;
   clearCart: () => void;
+  checkoutData: CheckoutData | null;
+  setCheckoutData: (data: CheckoutData | null) => void;
+  lastOrder: OrderSummary | null;
+  setLastOrder: (order: OrderSummary | null) => void;
   isLoading: boolean;
 }
 
@@ -26,6 +44,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+  const [lastOrder, setLastOrder] = useState<OrderSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load from local storage on mount
@@ -86,6 +106,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateItemQuantity,
         removeItem,
         clearCart,
+        checkoutData,
+        setCheckoutData,
+        lastOrder,
+        setLastOrder,
         isLoading,
       }}
     >

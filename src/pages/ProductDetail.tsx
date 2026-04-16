@@ -1,11 +1,12 @@
 import { useParams } from "wouter";
-import { getProductById } from "@/lib/mock-data";
+import { getProductById, getProducts } from "@/lib/mock-data";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getImagePath } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import { Minus, Plus } from "lucide-react";
 
 export default function ProductDetail() {
@@ -46,7 +47,7 @@ export default function ProductDetail() {
         >
           {product.imageUrl ? (
             <img 
-              src={product.imageUrl} 
+              src={getImagePath(product.imageUrl) || ""} 
               alt={product.name}
               className="w-full h-full object-cover"
             />
@@ -128,6 +129,34 @@ export default function ProductDetail() {
             </div>
           </div>
         </motion.div>
+      </div>
+
+      {/* Related Products */}
+      <div className="mt-32">
+        <h2 className="font-display text-2xl tracking-[0.2em] mb-12 border-b border-border pb-6">YOU MAY ALSO LIKE</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {getProducts().filter((p: any) => p.id !== product.id).slice(0, 4).map((p: any) => (
+            <Link key={p.id} href={`/product/${p.id}`}>
+              <div className="group cursor-pointer">
+                <div className="aspect-[3/4] overflow-hidden mb-4 bg-card border border-border group-hover:border-primary/50 transition-colors">
+                  {p.imageUrl ? (
+                    <img 
+                      src={getImagePath(p.imageUrl) || ""} 
+                      alt={p.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground font-display tracking-widest text-sm">
+                      GIFORA
+                    </div>
+                  )}
+                </div>
+                <h3 className="font-display text-sm tracking-wider group-hover:text-primary transition-colors">{p.name}</h3>
+                <p className="text-muted-foreground text-xs tracking-widest mt-1">{formatPrice(p.price)}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

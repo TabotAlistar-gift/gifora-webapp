@@ -3,13 +3,15 @@ import { ShoppingBag, Menu, X, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [location] = useLocation();
+  useLocation();
   const { cart } = useCartWrapper();
+  const { user, logout } = useAuth();
 
   const cartItemCount = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
 
@@ -23,6 +25,7 @@ export default function Navbar() {
     { name: "Collection", href: "/collection" },
     { name: "Crochet", href: "/collection?category=crochet" },
     { name: "Beaded Bags", href: "/collection?category=beaded-bag" },
+    { name: "Our Story", href: "/artisan-journey" },
   ];
 
   return (
@@ -65,9 +68,24 @@ export default function Navbar() {
 
           {/* Icons */}
           <div className="flex items-center gap-6">
-            <Link href="/admin" className="hidden md:block text-foreground hover:text-primary transition-colors">
-              <User className="w-5 h-5" />
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="hidden md:block text-[10px] tracking-widest uppercase text-primary font-bold">Welcome, {user.name.split(' ')[0]}</span>
+                <Link href="/profile" className="text-foreground hover:text-primary transition-colors" title="Account Settings">
+                  <User className="w-5 h-5 fill-primary/20" />
+                </Link>
+                <button 
+                  onClick={logout}
+                  className="hidden md:block text-[10px] tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors ml-2"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link href="/auth" className="hidden md:block text-foreground hover:text-primary transition-colors">
+                <User className="w-5 h-5" />
+              </Link>
+            )}
             <Link href="/cart" className="text-foreground hover:text-primary transition-colors relative group">
               <ShoppingBag className="w-5 h-5" />
               {cartItemCount > 0 && (
@@ -108,13 +126,31 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="h-px w-full bg-border my-4" />
-              <Link 
-                href="/admin" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-sm font-medium tracking-widest uppercase hover:text-primary flex items-center gap-2"
-              >
-                <User className="w-4 h-4" /> Admin Access
-              </Link>
+              <div className="mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-muted-foreground leading-none mb-1">Status</p>
+                <p className="text-xs font-medium tracking-wider text-foreground">
+                  {user ? user.name : "Guest Access"}
+                </p>
+                {user && (
+                  <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-[9px] tracking-widest text-primary uppercase hover:underline mt-1 block">View Profile</Link>
+                )}
+              </div>
+              {user ? (
+                <button 
+                  onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                  className="text-sm font-medium tracking-widest uppercase hover:text-primary text-left"
+                >
+                  Logout
+                </button>
+              ) : (
+                <Link 
+                  href="/auth" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm font-medium tracking-widest uppercase hover:text-primary flex items-center gap-2"
+                >
+                  <User className="w-4 h-4" /> Sign In
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

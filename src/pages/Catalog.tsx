@@ -1,7 +1,11 @@
 import { getProducts } from "@/lib/mock-data";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getImagePath } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingBag, Heart, MessageSquare } from "lucide-react";
+import { useCartWrapper } from "@/hooks/use-cart-wrapper";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export default function Catalog() {
   const [location] = useLocation();
@@ -13,6 +17,41 @@ export default function Catalog() {
     ? allProducts.filter(p => p.category === categoryParam)
     : allProducts;
   const isLoading = false;
+  
+  const { addToCart } = useCartWrapper();
+  const { toast } = useToast();
+  const [wishlist, setWishlist] = useState<number[]>([]);
+
+  // Load wishlist from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem("gifora_wishlist");
+    if (saved) setWishlist(JSON.parse(saved));
+  }, []);
+
+  const toggleWishlist = (id: number) => {
+    const newWishlist = wishlist.includes(id)
+      ? wishlist.filter(item => item !== id)
+      : [...wishlist, id];
+    setWishlist(newWishlist);
+    localStorage.setItem("gifora_wishlist", JSON.stringify(newWishlist));
+    
+    if (!wishlist.includes(id)) {
+      toast({
+        title: "Added to Wishlist",
+        description: "This piece has been reserved in your favorites.",
+        className: "bg-primary text-primary-foreground"
+      });
+    }
+  };
+
+  const handleQuickAdd = (product: any) => {
+    addToCart(product.id, 1);
+    toast({
+      title: "Bag Updated",
+      description: `${product.name} has been added to your shopping bag.`,
+      className: "bg-primary text-primary-foreground font-display tracking-widest text-xs"
+    });
+  };
 
   return (
     <div className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
@@ -74,7 +113,7 @@ export default function Catalog() {
                 <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-card border border-border group-hover:border-primary/50 transition-colors duration-500">
                   {product.imageUrl ? (
                     <img 
-                      src={product.imageUrl} 
+                      src={getImagePath(product.imageUrl) || ""} 
                       alt={product.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
                     />
@@ -83,11 +122,33 @@ export default function Catalog() {
                       GIFORA
                     </div>
                   )}
-                  {product.stock <= 0 && (
+                   {product.stock <= 0 && (
                     <div className="absolute top-4 right-4 bg-background/90 text-foreground px-3 py-1 text-xs tracking-widest border border-border">
                       SOLD OUT
                     </div>
                   )}
+
+                  {/* Quick Action Overlay */}
+                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-4 z-10">
+                    <button 
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id); }}
+                      className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-primary transition-colors border border-white/20"
+                    >
+                      <Heart className={`w-4 h-4 ${wishlist.includes(product.id) ? "fill-white" : ""}`} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleQuickAdd(product); }}
+                      className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-primary transition-colors border border-white/20"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toast({ title: "Comment Section", description: "Customer reviews arriving soon.", className: "bg-card text-foreground border-primary" }); }}
+                      className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-primary transition-colors border border-white/20"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="text-center">
                   <h3 className="font-display text-lg tracking-wider mb-2 group-hover:text-primary transition-colors">{product.name}</h3>

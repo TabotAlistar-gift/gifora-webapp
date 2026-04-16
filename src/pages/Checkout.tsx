@@ -1,4 +1,5 @@
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
+import { useAuth } from "@/context/AuthContext";
 import { formatPrice } from "@/lib/utils";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useLocation } from "wouter";
@@ -19,26 +20,30 @@ const checkoutSchema = z.object({
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
 export default function Checkout() {
-  const { cart, sessionId, clearCart } = useCartWrapper();
-
-
+  const { cart } = useCartWrapper();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
   
-
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>({
-    resolver: zodResolver(checkoutSchema)
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      customerName: user?.name || "",
+      customerEmail: user?.email || "",
+    }
   });
+
+  const { setCheckoutData } = useCartWrapper();
 
   const onSubmit = (data: CheckoutForm) => {
     if (!cart || !Array.isArray(cart.items) || cart.items.length === 0) return;
     setIsPending(true);
     setTimeout(() => {
-      clearCart();
+      setCheckoutData(data);
       setIsPending(false);
-      toast({ title: "Order Initiated", description: "Redirecting to GIFORA Pay...", className: "bg-primary text-primary-foreground" });
-      setLocation("/success/999");
+      toast({ title: "Details Secured", description: "Redirecting to GIFORA Pay...", className: "bg-primary text-primary-foreground" });
+      setLocation("/payment");
     }, 1000);
   };
 
@@ -52,39 +57,39 @@ export default function Checkout() {
       <h1 className="font-display text-3xl tracking-[0.15em] mb-12 text-center">SECURE CHECKOUT</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        {/* Form */}
-        <div>
-          <h2 className="font-display text-xl tracking-widest mb-6 border-b border-border pb-4">SHIPPING DETAILS</h2>
+        <section className="bg-card border border-border p-8">
+          <h2 className="font-display text-xl tracking-widest mb-8 border-b border-border pb-4 uppercase">Shipping Information</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <label className="block text-xs tracking-widest text-muted-foreground uppercase mb-2">Full Name</label>
-              <input 
-                {...register("customerName")}
-                className="w-full bg-card border border-border p-3 text-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-              {errors.customerName && <p className="text-destructive text-xs mt-1">{errors.customerName.message}</p>}
-            </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs tracking-widest text-muted-foreground uppercase mb-2">Email Address</label>
+              <div className="space-y-2">
+                <label className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase font-bold">Full Name</label>
+                <input 
+                  {...register("customerName")}
+                  className="w-full bg-background border border-border p-3 text-sm focus:border-primary outline-none transition-colors"
+                  placeholder="First and Last Name"
+                />
+                {errors.customerName && <p className="text-red-500 text-[10px] tracking-widest uppercase">{errors.customerName.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase font-bold">Email Address</label>
                 <input 
                   {...register("customerEmail")}
-                  className="w-full bg-card border border-border p-3 text-foreground focus:outline-none focus:border-primary transition-colors"
+                  className="w-full bg-background border border-border p-3 text-sm focus:border-primary outline-none transition-colors"
+                  placeholder="email@example.com"
                 />
-                {errors.customerEmail && <p className="text-destructive text-xs mt-1">{errors.customerEmail.message}</p>}
+                {errors.customerEmail && <p className="text-red-500 text-[10px] tracking-widest uppercase">{errors.customerEmail.message}</p>}
               </div>
-              <div>
-                <label className="block text-xs tracking-widest text-muted-foreground uppercase mb-2">Phone (Optional)</label>
-                <input 
-                  {...register("customerPhone")}
-                  className="w-full bg-card border border-border p-3 text-foreground focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
+            </div>
+            <div>
+              <label className="block text-xs tracking-widest text-muted-foreground uppercase mb-2 font-bold opacity-60">Phone (Optional)</label>
+              <input 
+                {...register("customerPhone")}
+                className="w-full bg-card border border-border p-3 text-foreground focus:outline-none focus:border-primary transition-colors"
+              />
             </div>
 
             <div>
-              <label className="block text-xs tracking-widest text-muted-foreground uppercase mb-2">Complete Address</label>
+              <label className="block text-xs tracking-widest text-muted-foreground uppercase mb-2 font-bold opacity-60">Complete Address</label>
               <textarea 
                 {...register("shippingAddress")}
                 rows={3}
@@ -101,7 +106,7 @@ export default function Checkout() {
               PLACE ORDER
             </LuxuryButton>
           </form>
-        </div>
+        </section>
 
         {/* Order Summary */}
         <div className="bg-card border border-border p-8 h-fit">
@@ -113,11 +118,11 @@ export default function Checkout() {
                   {item.product.imageUrl && <img src={item.product.imageUrl} alt="" className="w-full h-full object-cover" />}
                 </div>
                 <div className="flex-1 text-sm font-light">
-                  <p className="font-medium tracking-wide mb-1">{item.product.name}</p>
-                  <p className="text-muted-foreground">Qty: {item.quantity}</p>
-                </div>
-                <div className="text-sm tracking-widest">
-                  {formatPrice(item.product.price * item.quantity)}
+                  <p className="font-medium tracking-wide mb-1 uppercase">{item.product.name}</p>
+                  <p className="text-muted-foreground lowercase">Quantity: {item.quantity}</p>
+                  <div className="text-sm tracking-widest mt-1">
+                    {formatPrice(item.product.price * item.quantity)}
+                  </div>
                 </div>
               </div>
             ))}

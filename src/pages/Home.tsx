@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { getFeaturedProducts } from "@/lib/mock-data";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getImagePath } from "@/lib/utils";
 
 export default function Home() {
   const products = getFeaturedProducts();
@@ -15,7 +15,7 @@ export default function Home() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src={`${import.meta.env.BASE_URL}images/hero-luxury.png`}
+            src={getImagePath("images/hero-luxury.png") || ""}
             alt="GIFORA Luxury Background" 
             className="w-full h-full object-cover opacity-60"
           />
@@ -72,7 +72,7 @@ export default function Home() {
                 <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-card border border-border group-hover:border-primary/50 transition-colors duration-500">
                   {product.imageUrl ? (
                     <img 
-                      src={product.imageUrl} 
+                      src={getImagePath(product.imageUrl) || ""} 
                       alt={product.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
                     />
@@ -103,16 +103,30 @@ export default function Home() {
       <section className="relative py-32 overflow-hidden border-y border-border">
         <div className="absolute inset-0 z-0">
           <img 
-            src={`${import.meta.env.BASE_URL}images/brand-texture.png`}
+            src={getImagePath("images/brand-texture.png") || ""}
             alt="Craftsmanship texture" 
             className="w-full h-full object-cover opacity-30"
           />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-display text-3xl md:text-4xl tracking-widest text-primary mb-8">THE ART OF MAKING</h2>
-          <p className="text-lg leading-relaxed text-foreground/80 font-light mb-12">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="font-display text-3xl md:text-4xl tracking-widest text-primary mb-8"
+          >
+            THE ART OF MAKING
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="text-lg leading-relaxed text-foreground/80 font-light mb-12"
+          >
             Every GIFORA piece is a testament to patience and precision. We believe that true luxury lies in the details—the careful selection of materials, the rhythm of the crochet hook, and the meticulous placement of each bead. Our collections are limited, ensuring that your piece remains as unique as you are.
-          </p>
+          </motion.p>
         </div>
       </section>
     </div>
