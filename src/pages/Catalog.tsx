@@ -1,32 +1,71 @@
-import { getProducts } from "@/lib/mock-data";
-import { formatPrice, getImagePath } from "@/lib/utils";
+import { Product } from "@/lib/mock-data";
+import { fetchProducts } from "@/lib/api";
+import { formatPrice, formatXAF, getImagePath } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Heart, MessageSquare } from "lucide-react";
+import { ShoppingBag, Heart, MessageSquare, ChevronDown } from "lucide-react";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { LuxuryButton } from "@/components/ui/LuxuryButton";
 
-export default function Catalog() {
+export default function Catalog({ params }: { params: { category?: string } }) {
   const [location] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
-  const categoryParam = searchParams.get("category");
+  const categoryParam = params.category;
 
-  const allProducts = getProducts();
-  const products = categoryParam 
-    ? allProducts.filter(p => p.category === categoryParam)
-    : allProducts;
-  const isLoading = false;
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await fetchProducts();
+        setAllProducts(data);
+      } catch (error) {
+        console.error("Collection sync failed", error);
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
+    const filtered = categoryParam 
+      ? allProducts.filter(p => p.category === categoryParam)
+      : allProducts;
+    setProducts(filtered);
+  }, [categoryParam, allProducts]);
+
+  const displayedProducts = products.slice(0, visibleCount);
   
   const { addToCart } = useCartWrapper();
   const { toast } = useToast();
   const [wishlist, setWishlist] = useState<number[]>([]);
+
+  // Reset visibleCount when category changes
+  useEffect(() => {
+    setVisibleCount(9);
+  }, [categoryParam]);
 
   // Load wishlist from local storage
   useEffect(() => {
     const saved = localStorage.getItem("gifora_wishlist");
     if (saved) setWishlist(JSON.parse(saved));
   }, []);
+
+  const handleSeeMore = () => {
+    setIsLoading(true);
+    // Mimic artisanal loading delay for luxury feel
+    setTimeout(() => {
+      setVisibleCount(prev => prev + 6);
+      setIsLoading(false);
+    }, 800);
+  };
 
   const toggleWishlist = (id: number) => {
     const newWishlist = wishlist.includes(id)
@@ -71,13 +110,13 @@ export default function Catalog() {
             All
           </Link>
           <Link 
-            href="/collection?category=crochet" 
+            href="/collection/crochet" 
             className={`hover:text-primary transition-colors ${categoryParam === 'crochet' ? 'text-primary' : 'text-muted-foreground'}`}
           >
             Crochet
           </Link>
           <Link 
-            href="/collection?category=beaded-bag" 
+            href="/collection/beaded-bag" 
             className={`hover:text-primary transition-colors ${categoryParam === 'beaded-bag' ? 'text-primary' : 'text-muted-foreground'}`}
           >
             Beaded Bags
@@ -85,28 +124,16 @@ export default function Catalog() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="animate-pulse">
-              <div className="aspect-[4/5] bg-card border border-border mb-6" />
-              <div className="h-6 bg-card w-2/3 mx-auto mb-2" />
-              <div className="h-4 bg-card w-1/3 mx-auto" />
-            </div>
-          ))}
-        </div>
-      ) : products?.length === 0 ? (
-        <div className="text-center py-32 text-muted-foreground">
-          <p className="text-xl font-display tracking-widest">No pieces found in this collection.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
-          {Array.isArray(products) && products.map((product, idx) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
+        <AnimatePresence mode="popLayout">
+          {displayedProducts.map((product, idx) => (
             <motion.div 
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.5, delay: idx % 9 * 0.1 }}
+              layout
               className="group cursor-pointer"
             >
               <Link href={`/product/${product.id}`}>
@@ -128,7 +155,6 @@ export default function Catalog() {
                     </div>
                   )}
 
-                  {/* Quick Action Overlay */}
                   <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-4 z-10">
                     <button 
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id); }}
@@ -152,11 +178,36 @@ export default function Catalog() {
                 </div>
                 <div className="text-center">
                   <h3 className="font-display text-lg tracking-wider mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
-                  <p className="text-muted-foreground tracking-widest">{formatPrice(product.price)}</p>
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground tracking-widest">{formatPrice(product.price)}</p>
+                    <p className="text-[10px] text-muted-foreground/60 font-sans tracking-wide leading-none">({formatXAF(product.price)})</p>
+                  </div>
                 </div>
               </Link>
             </motion.div>
           ))}
+        </AnimatePresence>
+      </div>
+
+      {products.length > visibleCount && (
+        <div className="mt-20 text-center">
+          <LuxuryButton 
+            onClick={handleSeeMore}
+            disabled={isLoading}
+            className="group px-12 relative overflow-hidden"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:0.4s]" />
+              </div>
+            ) : (
+              <span className="flex items-center gap-2">
+                ENLARGE COLLECTION <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
+              </span>
+            )}
+          </LuxuryButton>
         </div>
       )}
     </div>

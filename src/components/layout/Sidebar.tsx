@@ -6,16 +6,18 @@ import {
   Sparkles, 
   ShoppingBag, 
   User,
-  CreditCard
+  CreditCard,
+  Heart
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/context/SidebarContext";
 
 export default function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, setIsExpanded } = useSidebar();
   const [location] = useLocation();
   const { cart } = useCartWrapper();
   const { user } = useAuth();
@@ -24,8 +26,9 @@ export default function Sidebar() {
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Collection", href: "/collection", icon: LayoutGrid },
-    { name: "Crochet", href: "/collection?category=crochet", icon: Wind },
-    { name: "Beaded Bags", href: "/collection?category=beaded-bag", icon: Sparkles },
+    { name: "Crochet", href: "/collection/crochet", icon: Wind },
+    { name: "Beaded Bags", href: "/collection/beaded-bag", icon: Sparkles },
+    { name: "Our Story", href: "/artisan-journey", icon: Heart },
     { name: "Payments", href: "/payment", icon: CreditCard },
     { name: "Shopping Bag", href: "/cart", icon: ShoppingBag, badge: cartItemCount },
     { name: "Account", href: user ? "/profile" : "/auth", icon: User },

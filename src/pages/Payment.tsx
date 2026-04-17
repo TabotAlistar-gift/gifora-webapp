@@ -11,7 +11,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
-import { formatPrice, cn } from "@/lib/utils";
+import { formatPrice, formatXAF, cn } from "@/lib/utils";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,7 +19,7 @@ export default function Payment() {
   const { cart, clearCart, checkoutData, setLastOrder } = useCartWrapper();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [selectedMethod, setSelectedMethod] = useState<"card" | "wallet" | "transfer">("card");
+  const [selectedMethod, setSelectedMethod] = useState<"card" | "wallet" | "transfer" | "momo" | "orange">("card");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -143,11 +143,13 @@ export default function Payment() {
           </motion.div>
 
           {/* Payment Method Selector */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
               { id: "card", label: "Luxury Card", icon: CreditCard },
               { id: "wallet", label: "GIFORA App", icon: Smartphone },
               { id: "transfer", label: "Boutique Bank", icon: Building2 },
+              { id: "momo", label: "MTN MoMo", icon: Smartphone },
+              { id: "orange", label: "Orange Money", icon: Smartphone },
             ].map((method) => (
               <button
                 key={method.id}
@@ -178,53 +180,79 @@ export default function Payment() {
             
             <form className="space-y-6 mb-12">
               <div className="space-y-4">
-                 <div>
-                    <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Personal Card Number</label>
-                    <input 
-                       maxLength={19}
-                       onChange={(e) => setCardData(prev => ({ ...prev, number: e.target.value }))}
-                       placeholder="**** **** **** ****"
-                       className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.2em] focus:outline-none focus:border-primary transition-colors text-sm font-light uppercase"
-                    />
-                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Full Name</label>
-                       <input 
-                          onChange={(e) => setCardData(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Your Name"
-                          className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light uppercase"
-                       />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                       <div>
-                         <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Exp.</label>
-                         <input 
-                            maxLength={5}
-                            onChange={(e) => setCardData(prev => ({ ...prev, expiry: e.target.value }))}
-                            placeholder="MM/YY"
-                            className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
-                         />
-                       </div>
-                       <div>
-                         <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">CVC</label>
-                         <input 
-                            maxLength={3}
-                            type="password"
-                            onChange={(e) => setCardData(prev => ({ ...prev, cvc: e.target.value }))}
-                            placeholder="***"
-                            className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
-                         />
-                       </div>
-                    </div>
-                 </div>
+                 {selectedMethod === "card" ? (
+                   <>
+                     <div>
+                        <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Personal Card Number</label>
+                        <input 
+                           maxLength={19}
+                           onChange={(e) => setCardData(prev => ({ ...prev, number: e.target.value }))}
+                           placeholder="**** **** **** ****"
+                           className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.2em] focus:outline-none focus:border-primary transition-colors text-sm font-light uppercase"
+                        />
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                           <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Full Name</label>
+                           <input 
+                              onChange={(e) => setCardData(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Your Name"
+                              className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light uppercase"
+                           />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div>
+                             <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">Exp.</label>
+                             <input 
+                                maxLength={5}
+                                onChange={(e) => setCardData(prev => ({ ...prev, expiry: e.target.value }))}
+                                placeholder="MM/YY"
+                                className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
+                             />
+                           </div>
+                           <div>
+                             <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">CVC</label>
+                             <input 
+                                maxLength={3}
+                                type="password"
+                                onChange={(e) => setCardData(prev => ({ ...prev, cvc: e.target.value }))}
+                                placeholder="***"
+                                className="w-full bg-background/50 border border-border p-3 text-foreground tracking-[0.15em] focus:outline-none focus:border-primary transition-colors text-sm font-light text-center"
+                             />
+                           </div>
+                        </div>
+                     </div>
+                   </>
+                 ) : (
+                   <div className="space-y-6">
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg mb-6">
+                        <p className="text-[10px] tracking-widest text-primary uppercase font-bold mb-1">Mobile Payment Notice</p>
+                        <p className="text-xs text-muted-foreground font-light leading-relaxed">
+                          A secure USSD prompt will be sent to your device. Please ensure your phone is unlocked.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-2 font-bold">
+                          {selectedMethod === "momo" ? "MTN Mobile Number" : "Orange Money Number"}
+                        </label>
+                        <input 
+                           type="tel"
+                           placeholder="6XX XXX XXX"
+                           className="w-full bg-background/50 border border-border p-4 text-foreground tracking-[0.2em] focus:outline-none focus:border-primary transition-colors text-lg font-light"
+                        />
+                      </div>
+                   </div>
+                 )}
               </div>
             </form>
 
             <div className="space-y-4 pt-6 border-t border-border">
               <div className="flex justify-between items-center bg-primary/5 p-4 border border-primary/20">
-                 <span className="text-[10px] tracking-widest text-muted-foreground uppercase font-bold">Authorized Reservation Total</span>
-                 <span className="font-display text-xl text-primary font-bold">{formatPrice(cart?.total || 0)}</span>
+                 <div className="space-y-1">
+                   <span className="text-[10px] tracking-widest text-muted-foreground uppercase font-bold block">Authorized Reservation Total</span>
+                   <span className="text-[11px] text-muted-foreground tracking-[0.15em] font-sans">({formatXAF(cart?.total || 0)})</span>
+                 </div>
+                 <span className="font-display text-2xl text-primary font-bold">{formatPrice(cart?.total || 0)}</span>
               </div>
               
               <LuxuryButton 

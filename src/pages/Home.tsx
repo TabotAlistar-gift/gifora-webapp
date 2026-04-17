@@ -1,13 +1,28 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
-import { getFeaturedProducts } from "@/lib/mock-data";
+import { Product } from "@/lib/mock-data";
+import { fetchProducts } from "@/lib/api";
 import { formatPrice, getImagePath } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 export default function Home() {
-  const products = getFeaturedProducts();
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const featuredProducts = products.slice(0, 3);
+  useEffect(() => {
+    const loadFeatured = async () => {
+      try {
+        const allProducts = await fetchProducts();
+        setFeaturedProducts(allProducts.filter(p => p.featured).slice(0, 3));
+      } catch (error) {
+        console.error("Signature collection failed to sync", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadFeatured();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,37 +74,48 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {featuredProducts.map((product, idx) => (
-            <motion.div 
-              key={product.id}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: idx * 0.2 }}
-              className="group cursor-pointer"
-            >
-              <Link href={`/product/${product.id}`}>
-                <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-card border border-border group-hover:border-primary/50 transition-colors duration-500">
-                  {product.imageUrl ? (
-                    <img 
-                      src={getImagePath(product.imageUrl) || ""} 
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground font-display tracking-widest">
-                      GIFORA
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
-                </div>
-                <div className="text-center">
-                  <h3 className="font-display text-lg tracking-wider mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
-                  <p className="text-muted-foreground tracking-widest">{formatPrice(product.price)}</p>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+          {isLoading ? (
+            // Artisanal Skeleton Loaders
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[4/5] bg-primary/5 border border-border mb-6" />
+                <div className="h-4 bg-primary/5 w-3/4 mx-auto mb-2" />
+                <div className="h-4 bg-primary/5 w-1/2 mx-auto" />
+              </div>
+            ))
+          ) : (
+            featuredProducts.map((product, idx) => (
+              <motion.div 
+                key={product.id}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: idx * 0.2 }}
+                className="group cursor-pointer"
+              >
+                <Link href={`/product/${product.id}`}>
+                  <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-card border border-border group-hover:border-primary/50 transition-colors duration-500">
+                    {product.imageUrl ? (
+                      <img 
+                        src={getImagePath(product.imageUrl) || ""} 
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground font-display tracking-widest">
+                        GIFORA
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-display text-lg tracking-wider mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
+                    <p className="text-muted-foreground tracking-widest">{formatPrice(product.price)}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))
+          )}
         </div>
         
         <div className="mt-20 text-center">

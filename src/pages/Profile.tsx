@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
 import { 
   User as UserIcon, 
   Mail, 
@@ -10,10 +9,24 @@ import {
   MapPin, 
   Globe, 
   Languages, 
-  Lock,
   ShieldCheck,
-  ChevronRight
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -27,8 +40,16 @@ export default function Profile() {
     address: user?.address || "",
     country: user?.country || "",
     language: user?.language || "English",
-    pin: "••••••" // Mock PIN
   });
+
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [isPinVisible, setIsPinVisible] = useState(false);
+
+  const currentPinDisplay = user?.pin 
+    ? (isPinVisible ? user.pin : "•".repeat(user.pin.length)) 
+    : "••••••";
 
   const handleSave = () => {
     updateUser({
@@ -43,6 +64,37 @@ export default function Profile() {
     toast({
       title: "Profile Updated",
       description: "Your account details have been successfully synchronized.",
+      className: "bg-primary text-primary-foreground border-none"
+    });
+  };
+
+  const handlePinReset = () => {
+    if (newPin.length !== 6) {
+      toast({
+        title: "Invalid Length",
+        description: "Your security PIN must be exactly 6 digits.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPin !== confirmPin) {
+      toast({
+        title: "Mismatch",
+        description: "The confirmation PIN does not match. Please re-enter.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateUser({ pin: newPin });
+    setIsPinModalOpen(false);
+    setNewPin("");
+    setConfirmPin("");
+    
+    toast({
+      title: "Security Updated",
+      description: "Your private key has been successfully recalibrated.",
       className: "bg-primary text-primary-foreground border-none"
     });
   };
@@ -173,16 +225,95 @@ export default function Profile() {
                     <p className="text-xs text-muted-foreground tracking-widest uppercase font-light">Your private key for secure transactions</p>
                  </div>
               </div>
-              <div className="flex items-center gap-8">
-                 <div className="text-right">
-                    <span className="block text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-1 font-bold">Current PIN</span>
-                    <span className="font-display tracking-[0.5em] text-primary">{formData.pin}</span>
-                 </div>
-                 <LuxuryButton variant="outline" className="text-[10px] py-2">RESET PIN</LuxuryButton>
+                  <div className="text-right flex items-center gap-4">
+                     <div>
+                        <span className="block text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-1 font-bold text-right">Current PIN</span>
+                        <span className="font-display tracking-[0.5em] text-primary">{currentPinDisplay}</span>
+                     </div>
+                     <button 
+                        onClick={() => setIsPinVisible(!isPinVisible)}
+                        className="p-2 hover:bg-primary/10 transition-colors text-primary/60 hover:text-primary"
+                        title={isPinVisible ? "Hide PIN" : "Show PIN"}
+                     >
+                        {isPinVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                     </button>
+                  </div>
+                  <LuxuryButton 
+                    variant="outline" 
+                    className="text-[10px] py-2"
+                    onClick={() => setIsPinModalOpen(true)}
+                  >
+                    RESET PIN
+                  </LuxuryButton>
+               </div>
+            </section>
+         </div>
+
+      {/* Reset PIN Modal */}
+      <Dialog open={isPinModalOpen} onOpenChange={setIsPinModalOpen}>
+        <DialogContent className="max-w-md bg-card border border-border p-8 rounded-none">
+          <DialogHeader className="mb-8">
+            <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-4">
+              <Lock className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="font-display text-2xl tracking-widest uppercase mb-2">Reset Security PIN</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-xs uppercase tracking-[0.2em] font-light leading-relaxed">
+              Define a new 6-digit private key to secure your artisanal transactions and identity.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-8 py-4">
+            <div className="space-y-4">
+              <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase font-bold">New Security PIN</label>
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={newPin} onChange={setNewPin}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={1} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={2} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={3} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={4} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={5} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                  </InputOTPGroup>
+                </InputOTP>
               </div>
-           </div>
-        </section>
-      </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-[10px] tracking-[0.2em] text-muted-foreground uppercase font-bold">Confirm New PIN</label>
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={confirmPin} onChange={setConfirmPin}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={1} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={2} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={3} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={4} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                    <InputOTPSlot index={5} className="w-10 h-10 md:w-12 md:h-12 border-border focus:ring-primary" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-8 flex gap-4 sm:justify-start">
+            <LuxuryButton 
+              className="flex-1" 
+              onClick={handlePinReset}
+              disabled={newPin.length !== 6 || confirmPin.length !== 6}
+            >
+              UPDATE PRIVATE KEY
+            </LuxuryButton>
+            <LuxuryButton 
+              variant="outline" 
+              className="flex-1" 
+              onClick={() => setIsPinModalOpen(false)}
+            >
+              CANCEL
+            </LuxuryButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

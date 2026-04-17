@@ -1,14 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-
-export interface User {
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  country?: string;
-  language?: string;
-  isMember: boolean;
-}
+import { syncUserIdentity } from "@/lib/api";
+import { User } from "@/lib/mock-data";
 
 interface AuthContextType {
   user: User | null;
@@ -50,11 +42,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("gifora_session", JSON.stringify(newUser));
   };
 
-  const updateUser = (data: Partial<User>) => {
+
+  const updateUser = async (data: Partial<User>) => {
     if (!user) return;
-    const updatedUser = { ...user, ...data };
-    setUser(updatedUser);
-    localStorage.setItem("gifora_session", JSON.stringify(updatedUser));
+    try {
+      const updatedUser = await syncUserIdentity({ ...user, ...data });
+      setUser(updatedUser);
+      localStorage.setItem("gifora_session", JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Identity sync failed", error);
+      // Fallback for demo
+      const localUpdate = { ...user, ...data };
+      setUser(localUpdate);
+      localStorage.setItem("gifora_session", JSON.stringify(localUpdate));
+    }
   };
 
   const logout = () => {

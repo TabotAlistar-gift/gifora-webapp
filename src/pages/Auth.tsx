@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, Globe, Apple } from "lucide-react";
+import { Mail, Lock, User, Globe, Apple, ArrowLeft } from "lucide-react";
+import { getImagePath } from "@/lib/utils";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -51,12 +52,26 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen pt-32 pb-24 px-4 flex items-center justify-center bg-[radial-gradient(circle_at_50%_50%,rgba(201,168,76,0.05),transparent_70%)]">
+    <div className="relative min-h-screen pt-32 pb-24 px-4 flex items-center justify-center overflow-hidden">
+      {/* Background Image & Overlay */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={getImagePath("images/hero-luxury.png") || ""}
+          alt="Luxury Background" 
+          className="w-full h-full object-cover opacity-50 scale-105"
+        />
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background" />
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-card border border-border p-8 relative overflow-hidden"
+        className="w-full max-w-md bg-card/80 backdrop-blur-md border border-border p-8 relative overflow-hidden z-10"
       >
+        <Link href="/" className="absolute top-4 left-4 text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 text-[10px] tracking-widest uppercase mb-4 z-20">
+          <ArrowLeft className="w-3 h-3" /> Home
+        </Link>
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
         
         <div className="text-center mb-10">

@@ -1,6 +1,7 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -18,12 +19,15 @@ import Admin from "@/pages/Admin";
 import ArtisanJourney from "@/pages/ArtisanJourney";
 import Auth from "@/pages/Auth";
 import Profile from "@/pages/Profile";
+import Notifications from "@/pages/Notifications";
 import NotFound from "@/pages/not-found";
 import { CursorSpotlight } from "@/components/ui/CursorSpotlight";
 import { useLocation, Redirect } from "wouter";
+import { cn } from "@/lib/utils";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
 
   if (isLoading) return <div className="min-h-screen bg-background" />;
   
@@ -38,7 +42,7 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Home} />
-      <Route path="/collection" component={Catalog} />
+      <Route path="/collection/:category?" component={Catalog} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
@@ -47,33 +51,51 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/auth" component={Auth} />
       <ProtectedRoute path="/profile" component={Profile} />
+      <ProtectedRoute path="/notifications" component={Notifications} />
       <ProtectedRoute path="/artisan-journey" component={ArtisanJourney} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
+function Layout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  const { isExpanded } = useSidebar();
+  const isAuthPage = location.startsWith("/auth");
+
+  return (
+    <div className="min-h-screen flex relative selection:bg-primary selection:text-primary-foreground">
+      <CursorSpotlight />
+      {!isAuthPage && <Sidebar />}
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0 transition-all duration-500",
+        !isAuthPage && (isExpanded ? "lg:pl-64" : "lg:pl-20")
+      )}>
+        {!isAuthPage && <Navbar />}
+        <main className="flex-1">
+          {children}
+        </main>
+        {!isAuthPage && <Footer />}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
-      <CartProvider>
+      <SidebarProvider>
+        <CartProvider>
         <TooltipProvider>
-          <WouterRouter base={(import.meta as any).env.BASE_URL.replace(/\/$/, "")}>
-            <div className="min-h-screen flex relative selection:bg-primary selection:text-primary-foreground">
-              <CursorSpotlight />
-              <Sidebar />
-              <div className="flex-1 flex flex-col min-w-0 lg:pl-20">
-                <Navbar />
-                <main className="flex-1">
-                  <Router />
-                </main>
-                <Footer />
-              </div>
-            </div>
+          <WouterRouter base={((import.meta as any).env?.BASE_URL || "").replace(/\/$/, "")}>
+            <Layout>
+              <Router />
+            </Layout>
           </WouterRouter>
           <Toaster />
         </TooltipProvider>
-      </CartProvider>
+        </CartProvider>
+      </SidebarProvider>
     </AuthProvider>
   );
 }

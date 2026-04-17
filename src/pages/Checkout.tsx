@@ -1,6 +1,6 @@
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
 import { useAuth } from "@/context/AuthContext";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatXAF } from "@/lib/utils";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -120,8 +120,9 @@ export default function Checkout() {
                 <div className="flex-1 text-sm font-light">
                   <p className="font-medium tracking-wide mb-1 uppercase">{item.product.name}</p>
                   <p className="text-muted-foreground lowercase">Quantity: {item.quantity}</p>
-                  <div className="text-sm tracking-widest mt-1">
-                    {formatPrice(item.product.price * item.quantity)}
+                  <div className="text-sm tracking-widest mt-1 flex items-baseline gap-2">
+                    <span>{formatPrice(item.product.price * item.quantity)}</span>
+                    <span className="text-[10px] text-muted-foreground opacity-70 font-sans tracking-normal">({formatXAF(item.product.price * item.quantity)})</span>
                   </div>
                 </div>
               </div>
@@ -129,17 +130,23 @@ export default function Checkout() {
           </div>
           
           <div className="border-t border-border pt-6 space-y-4 text-sm tracking-wider text-muted-foreground font-light">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-baseline">
               <span>Subtotal</span>
-              <span className="text-foreground">{formatPrice(cart.total)}</span>
+              <div className="text-right">
+                <div className="text-foreground">{formatPrice(cart.total)}</div>
+                <div className="text-[10px] opacity-60 font-sans tracking-normal">({formatXAF(cart.total)})</div>
+              </div>
             </div>
             <div className="flex justify-between">
               <span>Standard Shipping</span>
-              <span className="text-foreground">Complimentary</span>
+              <span className="text-foreground text-[10px] tracking-widest uppercase font-bold opacity-60">Complimentary</span>
             </div>
-            <div className="flex justify-between font-display text-lg text-foreground pt-4 border-t border-border mt-4">
+            <div className="flex justify-between items-baseline font-display text-lg text-foreground pt-4 border-t border-border mt-4">
               <span>Total</span>
-              <span className="text-primary">{formatPrice(cart.total)}</span>
+              <div className="text-right">
+                <div className="text-primary">{formatPrice(cart.total)}</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest font-sans">({formatXAF(cart.total)})</div>
+              </div>
             </div>
           </div>
         </div>

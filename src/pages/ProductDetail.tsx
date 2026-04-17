@@ -1,29 +1,49 @@
 import { useParams } from "wouter";
-import { getProductById, getProducts } from "@/lib/mock-data";
+import { Product } from "@/lib/mock-data";
+import { fetchProducts } from "@/lib/api";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
-import { formatPrice, getImagePath } from "@/lib/utils";
+import { formatPrice, formatXAF, getImagePath } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { Minus, Plus } from "lucide-react";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
-  const product = getProductById(Number(id));
-  const isLoading = false;
-  const isError = !product;
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  
   const { addToCart, isAdding } = useCartWrapper();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
 
-  if (isLoading) {
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const allProducts = await fetchProducts();
+        const found = allProducts.find(p => p.id === Number(id));
+        if (found) {
+          setProduct(found);
+          setRelatedProducts(allProducts.filter(p => p.id !== found.id).slice(0, 4));
+        }
+      } catch (error) {
+        console.error("Artisanal detail sync failed", error);
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+    loadData();
+  }, [id]);
+
+  if (isDataLoading) {
     return <div className="min-h-screen pt-32 flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
   }
 
-  if (isError || !product) {
-    return <div className="min-h-screen pt-32 text-center font-display text-xl text-destructive">Product not found.</div>;
+  if (!product) {
+    return <div className="min-h-screen pt-32 text-center font-display text-xl text-destructive uppercase tracking-widest">Masterpiece Not Found</div>;
   }
 
   const handleAddToCart = () => {
@@ -69,9 +89,14 @@ export default function ProductDetail() {
             {product.category.replace('-', ' ')}
           </div>
           <h1 className="font-display text-4xl lg:text-5xl tracking-[0.1em] mb-6">{product.name}</h1>
-          <p className="text-2xl font-light tracking-wider text-muted-foreground mb-8">
-            {formatPrice(product.price)}
-          </p>
+          <div className="flex flex-col mb-8">
+            <p className="text-3xl font-light tracking-wider text-foreground">
+              {formatPrice(product.price)}
+            </p>
+            <p className="text-sm text-muted-foreground/60 tracking-[0.2em] font-sans mt-2">
+              ({formatXAF(product.price)})
+            </p>
+          </div>
 
           <div className="prose prose-invert prose-p:text-foreground/80 prose-p:font-light prose-p:leading-relaxed mb-12">
             <p>{product.description}</p>
@@ -135,7 +160,7 @@ export default function ProductDetail() {
       <div className="mt-32">
         <h2 className="font-display text-2xl tracking-[0.2em] mb-12 border-b border-border pb-6">YOU MAY ALSO LIKE</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {getProducts().filter((p: any) => p.id !== product.id).slice(0, 4).map((p: any) => (
+          {relatedProducts.map((p) => (
             <Link key={p.id} href={`/product/${p.id}`}>
               <div className="group cursor-pointer">
                 <div className="aspect-[3/4] overflow-hidden mb-4 bg-card border border-border group-hover:border-primary/50 transition-colors">
@@ -152,7 +177,10 @@ export default function ProductDetail() {
                   )}
                 </div>
                 <h3 className="font-display text-sm tracking-wider group-hover:text-primary transition-colors">{p.name}</h3>
-                <p className="text-muted-foreground text-xs tracking-widest mt-1">{formatPrice(p.price)}</p>
+                <p className="text-muted-foreground text-xs tracking-widest mt-1 flex flex-col">
+                  <span>{formatPrice(p.price)}</span>
+                  <span className="opacity-50 font-sans tracking-normal">({formatXAF(p.price)})</span>
+                </p>
               </div>
             </Link>
           ))}
