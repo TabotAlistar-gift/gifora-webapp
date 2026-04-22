@@ -17,7 +17,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (!isLogin && !name)) {
       toast({
@@ -28,14 +28,22 @@ export default function Auth() {
       return;
     }
 
-    if (isLogin) {
-      login(email, "User");
-      toast({ title: "Welcome Back", description: "Your luxury journey continues." });
-    } else {
-      signup(email, name);
-      toast({ title: "Account Created", description: "Welcome to the GIFORA Gilded Circle." });
+    try {
+      if (isLogin) {
+        await login(email, password);
+        toast({ title: "Welcome Back", description: "Your luxury journey continues." });
+      } else {
+        await signup(email, password, name);
+        toast({ title: "Account Created", description: "Welcome to the GIFORA Gilded Circle." });
+      }
+      setLocation("/");
+    } catch (error) {
+      toast({
+        title: "Authentication Failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive"
+      });
     }
-    setLocation("/");
   };
 
   const handleSocialMock = (platform: string) => {
@@ -45,9 +53,13 @@ export default function Auth() {
       className: "bg-primary text-primary-foreground"
     });
     // Mock successful login after delay
-    setTimeout(() => {
-      login("user@example.com", "User");
-      setLocation("/");
+    setTimeout(async () => {
+      try {
+        await login("user@example.com", "password123");
+        setLocation("/");
+      } catch (e) {
+        // Handle mock error
+      }
     }, 1500);
   };
 

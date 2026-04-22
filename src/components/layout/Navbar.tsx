@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { ShoppingBag, Menu, X, User, Bell } from "lucide-react";
+import { ShoppingBag, Menu, X, User, Bell, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
@@ -113,6 +113,9 @@ export default function Navbar() {
                   <User className="w-5 h-5" />
                 </Link>
               )}
+              <Link href="/wishlist" className="text-foreground hover:text-primary transition-colors" title="Wishlist">
+                <Heart className="w-5 h-5" />
+              </Link>
               <Link href="/cart" className="text-foreground hover:text-primary transition-colors relative group">
                 <ShoppingBag className="w-5 h-5" />
                 {cartItemCount > 0 && (

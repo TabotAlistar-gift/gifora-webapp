@@ -47,7 +47,7 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    addToCart(product.id, quantity);
+    addToCart(product, quantity);
     toast({
       title: "Added to Cart",
       description: `${quantity}x ${product.name} added to your bag.`,

@@ -1,16 +1,17 @@
 import { Product } from "@/lib/mock-data";
 import { fetchProducts } from "@/lib/api";
 import { formatPrice, formatXAF, getImagePath } from "@/lib/utils";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Heart, MessageSquare, ChevronDown } from "lucide-react";
 import { useCartWrapper } from "@/hooks/use-cart-wrapper";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Catalog({ params }: { params: { category?: string } }) {
-  const [location] = useLocation();
   const categoryParam = params.category;
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -46,6 +47,53 @@ export default function Catalog({ params }: { params: { category?: string } }) {
   const { addToCart } = useCartWrapper();
   const { toast } = useToast();
   const [wishlist, setWishlist] = useState<number[]>([]);
+  
+  const { user } = useAuth();
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  const openCommentModal = async (productId: number) => {
+    setSelectedProductId(productId);
+    setIsCommentModalOpen(true);
+    setComments([]);
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${productId}/comments`);
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data);
+      }
+    } catch (e) {
+      console.error("Failed to load comments", e);
+    }
+  };
+
+  const submitComment = async () => {
+    if (!newComment.trim() || !selectedProductId) return;
+    setIsSubmittingComment(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${selectedProductId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName: user ? user.name : "Guest Patron", text: newComment })
+      });
+      if (res.ok) {
+        const { comment } = await res.json();
+        setComments([comment, ...comments]);
+        setNewComment("");
+        toast({ title: "Comment Posted", description: "Your thoughts have been shared.", className: "bg-primary text-primary-foreground border-none" });
+      } else {
+        const errorData = await res.json().catch(() => null);
+        toast({ title: "Submission Failed", description: errorData?.error || "Could not post comment. Please ensure backend is restarted.", variant: "destructive" });
+      }
+    } catch (e) {
+      console.error("Failed to post comment", e);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   // Reset visibleCount when category changes
   useEffect(() => {
@@ -84,13 +132,17 @@ export default function Catalog({ params }: { params: { category?: string } }) {
   };
 
   const handleQuickAdd = (product: any) => {
-    addToCart(product.id, 1);
+    addToCart(product, 1);
     toast({
       title: "Bag Updated",
       description: `${product.name} has been added to your shopping bag.`,
       className: "bg-primary text-primary-foreground font-display tracking-widest text-xs"
     });
   };
+
+  if (isDataLoading) {
+    return <div className="min-h-screen pt-32 flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
+  }
 
   return (
     <div className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
@@ -169,7 +221,7 @@ export default function Catalog({ params }: { params: { category?: string } }) {
                       <ShoppingBag className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toast({ title: "Comment Section", description: "Customer reviews arriving soon.", className: "bg-card text-foreground border-primary" }); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openCommentModal(product.id); }}
                       className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-primary transition-colors border border-white/20"
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -210,6 +262,56 @@ export default function Catalog({ params }: { params: { category?: string } }) {
           </LuxuryButton>
         </div>
       )}
+
+      {/* Comment Modal */}
+      <Dialog open={isCommentModalOpen} onOpenChange={setIsCommentModalOpen}>
+        <DialogContent className="max-w-md bg-card border border-border p-6 rounded-none">
+          <DialogHeader className="mb-4">
+            <div className="flex items-center gap-3 mb-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              <DialogTitle className="font-display text-xl tracking-widest uppercase">Artisanal Reviews</DialogTitle>
+            </div>
+            <DialogDescription className="text-xs tracking-widest uppercase text-muted-foreground">
+              Share your thoughts on this masterpiece
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <textarea 
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts..."
+                rows={3}
+                className="w-full bg-background border border-border p-3 text-sm focus:outline-none focus:border-primary transition-colors resize-none"
+              />
+              <LuxuryButton 
+                onClick={submitComment} 
+                disabled={!newComment.trim() || isSubmittingComment}
+                isLoading={isSubmittingComment}
+              >
+                POST COMMENT
+              </LuxuryButton>
+            </div>
+
+            <div className="space-y-4 mt-6 max-h-[300px] overflow-y-auto pr-2">
+              {comments.length === 0 ? (
+                <p className="text-center text-muted-foreground text-xs tracking-widest uppercase py-4">No comments yet. Be the first.</p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="border-b border-border pb-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-display text-primary tracking-widest text-xs uppercase">{comment.userName}</span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm font-light text-foreground/90">{comment.text}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

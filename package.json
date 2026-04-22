@@ -72,5 +72,8 @@
     "vite": "*",
     "wouter": "^3.3.5",
     "zod": "*"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
   }
 }

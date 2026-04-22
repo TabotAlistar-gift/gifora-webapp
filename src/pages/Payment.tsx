@@ -31,11 +31,25 @@ export default function Payment() {
     cvc: ""
   });
 
-  const handleProcessPayment = () => {
+  const handleProcessPayment = async () => {
     setIsProcessing(true);
-    // Simulate a luxury processing time
-    setTimeout(() => {
-      const orderId = (Math.floor(Math.random() * 900000) + 100000).toString();
+    try {
+      const token = localStorage.getItem('gifora_token');
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          total: cart.total,
+          customerName: checkoutData?.customerName || "Customer",
+        })
+      });
+      
+      if (!response.ok) throw new Error("Payment processing failed");
+      const data = await response.json();
+      const orderId = data.order.id.toString();
       
       // Save order summary for the success page
       setLastOrder({
@@ -46,17 +60,23 @@ export default function Payment() {
         status: "confirmed"
       });
 
-      setIsProcessing(false);
       setIsSuccess(true);
       toast({
         title: "Payment Verified",
         description: "Your GIFORA transaction was successful.",
         className: "bg-primary text-primary-foreground border-none"
       });
-      // Clear the cart on success
       clearCart();
       setTimeout(() => setLocation(`/success/${orderId}`), 2000);
-    }, 2500);
+    } catch (error) {
+      toast({
+        title: "Transaction Failed",
+        description: "There was an error processing your request.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (isSuccess) {

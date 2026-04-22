@@ -1,5 +1,5 @@
 import { useCartContext } from "../context/CartContext";
-import { getProductById } from "../lib/mock-data";
+import { Product } from "../lib/mock-data";
 
 export function useCartWrapper() {
   const cartContext = useCartContext();
@@ -8,11 +8,8 @@ export function useCartWrapper() {
     cart: cartContext.cart,
     isLoading: cartContext.isLoading,
     sessionId: "local-session",
-    addToCart: (productId: number, quantity: number = 1) => {
-      const product = getProductById(productId);
-      if (product) {
-        cartContext.addToCart(product, quantity);
-      }
+    addToCart: (product: Product, quantity: number = 1) => {
+      cartContext.addToCart(product, quantity);
     },
     updateItem: (itemId: number, quantity: number) => {
       cartContext.updateItemQuantity(itemId, quantity);

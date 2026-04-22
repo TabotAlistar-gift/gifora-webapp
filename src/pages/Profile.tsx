@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { LuxuryButton } from "@/components/ui/LuxuryButton";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +12,9 @@ import {
   ShieldCheck,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Activity,
+  ShoppingBag
 } from "lucide-react";
 import {
   Dialog,
@@ -29,9 +31,28 @@ import {
 } from "@/components/ui/input-otp";
 
 export default function Profile() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, socket } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isOnline, setIsOnline] = useState(socket?.connected || false);
+
+  useEffect(() => {
+    if (!socket) return;
+    
+    const onConnect = () => setIsOnline(true);
+    const onDisconnect = () => setIsOnline(false);
+    
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    
+    // Check initial state in case events fired before mount
+    setIsOnline(socket.connected);
+    
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+    };
+  }, [socket]);
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -41,6 +62,30 @@ export default function Profile() {
     country: user?.country || "",
     language: user?.language || "English",
   });
+
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = localStorage.getItem("gifora_token");
+        if (!token) return;
+        const res = await fetch("http://localhost:5000/api/orders", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch orders", error);
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    };
+    fetchOrders();
+  }, []);
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [newPin, setNewPin] = useState("");
@@ -103,7 +148,13 @@ export default function Profile() {
     <div className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-b border-border pb-8 gap-6">
         <div>
-          <h1 className="font-display text-4xl tracking-widest mb-2 uppercase">Your Profile</h1>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="font-display text-4xl tracking-widest uppercase">Your Profile</h1>
+            <div className={`flex items-center gap-1.5 px-3 py-1 text-[10px] tracking-widest uppercase border ${isOnline ? 'border-green-500/50 text-green-500 bg-green-500/10' : 'border-red-500/50 text-red-500 bg-red-500/10'}`}>
+              <Activity className="w-3 h-3" />
+              {isOnline ? 'System Online' : 'System Offline'}
+            </div>
+          </div>
           <p className="text-muted-foreground tracking-[0.2em] text-xs uppercase font-light">Manage your digital identity and preferences</p>
         </div>
         <LuxuryButton 
@@ -247,6 +298,41 @@ export default function Profile() {
                   </LuxuryButton>
                </div>
             </section>
+
+        {/* Order History */}
+        <section className="md:col-span-2 bg-card border border-border p-8">
+          <div className="flex items-center gap-3 text-primary border-b border-border pb-4 mb-6">
+            <ShoppingBag className="w-5 h-5" />
+            <h2 className="font-display text-xl tracking-widest uppercase">Order History</h2>
+          </div>
+          
+          {isLoadingOrders ? (
+            <div className="flex justify-center py-8">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : orders.length === 0 ? (
+            <p className="text-muted-foreground text-sm tracking-widest uppercase font-light text-center py-8">No past reservations found.</p>
+          ) : (
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+              {orders.map((order) => (
+                <div key={order.id} className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center p-4 border border-border bg-background/50 hover:border-primary/30 transition-colors">
+                  <div>
+                    <p className="font-display tracking-widest uppercase text-sm mb-1 text-primary">Order #{order.id.toString().padStart(6, '0')}</p>
+                    <p className="text-[10px] text-muted-foreground tracking-[0.2em] uppercase">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="sm:text-right">
+                    <p className="text-sm tracking-wider mb-1">${order.total.toFixed(2)}</p>
+                    <p className={`text-[10px] tracking-widest uppercase font-bold ${order.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
+                      {order.status}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
          </div>
 
       {/* Reset PIN Modal */}

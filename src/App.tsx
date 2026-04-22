@@ -20,6 +20,7 @@ import ArtisanJourney from "@/pages/ArtisanJourney";
 import Auth from "@/pages/Auth";
 import Profile from "@/pages/Profile";
 import Notifications from "@/pages/Notifications";
+import Wishlist from "@/pages/Wishlist";
 import NotFound from "@/pages/not-found";
 import { CursorSpotlight } from "@/components/ui/CursorSpotlight";
 import { useLocation, Redirect } from "wouter";
@@ -27,7 +28,6 @@ import { cn } from "@/lib/utils";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
-  const [location] = useLocation();
 
   if (isLoading) return <div className="min-h-screen bg-background" />;
   
@@ -41,11 +41,12 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={Home} />
+      <Route path="/" component={Home} />
       <Route path="/collection/:category?" component={Catalog} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
-      <Route path="/checkout" component={Checkout} />
+      <Route path="/wishlist" component={Wishlist} />
+      <ProtectedRoute path="/checkout" component={Checkout} />
       <Route path="/success/:id" component={OrderSuccess} />
       <Route path="/payment" component={Payment} />
       <Route path="/admin" component={Admin} />
